@@ -312,7 +312,7 @@ jobs:
                 aws s3 cp CHANGELOG.md "s3://dl.influxdata.com/platform/nightlies/<< pipeline.git.branch >>/CHANGELOG.md"
                 ;;
               release)
-                aws s3 cp CHANGELOG.md "s3://dl.influxdata.com/influxdb/releases/CHANGELOG.<< pipeline.git.tag >>.md"
+                aws s3 cp CHANGELOG.md "s3://dl.influxdata.com/influxdb/releases/CHANGELOG-v<< pipeline.git.tag >>.md"
                 ;;
             esac
 
