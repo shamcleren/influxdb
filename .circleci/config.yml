@@ -555,7 +555,7 @@ jobs:
             case "<< parameters.publish-type >>"
             in
               release)
-                aws s3 cp CHANGELOG.md "s3://dl.influxdata.com/influxdb/releases/CHANGELOG.${VERSION}.md"
+                aws s3 cp CHANGELOG.md "s3://dl.influxdata.com/influxdb/releases/CHANGELOG-v${VERSION}.md"
               ;;
               nightly)
                 aws s3 cp CHANGELOG.md "s3://dl.influxdata.com/platform/nightlies/<< pipeline.git.branch >>/CHANGELOG.md"
