@@ -59,7 +59,7 @@ func setupCommands(s *LocalServer, tracker *SeriesTracker) []Command {
 		tracker.Lock()
 		tracker.DeleteMeasurement(name)
 		query := fmt.Sprintf("DROP MEASUREMENT %s", name)
-		_, err := s.QueryWithParams(query, url.Values{"db": []string{"db0"}})
+		_, _, err := s.QueryWithParams(query, url.Values{"db": []string{"db0"}})
 		if err != nil {
 			return "", err
 		}
@@ -77,7 +77,7 @@ func setupCommands(s *LocalServer, tracker *SeriesTracker) []Command {
 		tracker.Lock()
 		tracker.DropSeries(name, tags)
 		query := fmt.Sprintf("DROP SERIES FROM %q WHERE %q = 'a'", name, tagKey)
-		_, err := s.QueryWithParams(query, url.Values{"db": []string{"db0"}})
+		_, _, err := s.QueryWithParams(query, url.Values{"db": []string{"db0"}})
 		if err != nil {
 			return "", err
 		}
@@ -93,7 +93,7 @@ func setupCommands(s *LocalServer, tracker *SeriesTracker) []Command {
 		tracker.Lock()
 		min, max := tracker.DeleteRandomRange(name)
 		query := fmt.Sprintf("DELETE FROM %q WHERE time >= %d AND time <= %d ", name, min, max)
-		_, err := s.QueryWithParams(query, url.Values{"db": []string{"db0"}})
+		_, _, err := s.QueryWithParams(query, url.Values{"db": []string{"db0"}})
 		if err != nil {
 			return "", err
 		}
@@ -316,7 +316,7 @@ func TestServer_Insert_Delete_10052(t *testing.T) {
 
 func mustGetSeries(s Server) []string {
 	// Compare series left in index.
-	result, err := s.QueryWithParams("SHOW SERIES", url.Values{"db": []string{"db0"}})
+	result, _, err := s.QueryWithParams("SHOW SERIES", url.Values{"db": []string{"db0"}})
 	if err != nil {
 		panic(err)
 	}
@@ -330,7 +330,7 @@ func mustGetSeries(s Server) []string {
 
 func mustGetFieldKeys(s Server) []string {
 	// Compare series left in index.
-	result, err := s.QueryWithParams("SHOW FIELD KEYS", url.Values{"db": []string{"db0"}})
+	result, _, err := s.QueryWithParams("SHOW FIELD KEYS", url.Values{"db": []string{"db0"}})
 	if err != nil {
 		panic(err)
 	}
@@ -360,14 +360,14 @@ func mustWrite(s Server, points ...string) {
 
 func mustDelete(s Server, name string, min, max int64) {
 	query := fmt.Sprintf("DELETE FROM %q WHERE time >= %d AND time <= %d ", name, min, max)
-	if _, err := s.QueryWithParams(query, url.Values{"db": []string{db}}); err != nil {
+	if _, _, err := s.QueryWithParams(query, url.Values{"db": []string{db}}); err != nil {
 		panic(err)
 	}
 }
 
 func mustDropMeasurement(s Server, name string) {
 	query := fmt.Sprintf("DROP MEASUREMENT %q", name)
-	if _, err := s.QueryWithParams(query, url.Values{"db": []string{db}}); err != nil {
+	if _, _, err := s.QueryWithParams(query, url.Values{"db": []string{db}}); err != nil {
 		panic(err)
 	}
 }
@@ -592,7 +592,7 @@ func (s *SeriesTracker) randomTime() (time.Time, uint64) {
 // Verify verifies that the server's view of the index/series file matches the
 // series tracker's.
 func (s *SeriesTracker) Verify() error {
-	res, err := s.server.QueryWithParams("SHOW SERIES", url.Values{"db": []string{"db0"}})
+	res, _, err := s.server.QueryWithParams("SHOW SERIES", url.Values{"db": []string{"db0"}})
 	if err != nil {
 		return err
 	}

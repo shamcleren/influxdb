@@ -43,8 +43,8 @@ type Server interface {
 	DropDatabase(db string) error
 	Reset() error
 
-	Query(query string) (results string, err error)
-	QueryWithParams(query string, values url.Values) (results string, err error)
+	Query(query string) (results string, headers string, err error)
+	QueryWithParams(query string, values url.Values) (results string, headers string, err error)
 
 	Write(db, rp, body string, params url.Values) (results string, err error)
 	MustWrite(db, rp, body string, params url.Values) string
@@ -145,11 +145,11 @@ func (s *LocalServer) Close() {
 		panic(err.Error())
 	}
 
-	if cleanupData {
-		if err := os.RemoveAll(s.Config.rootPath); err != nil {
-			panic(err.Error())
-		}
-	}
+	//if cleanupData {
+	//	if err := os.RemoveAll(s.Config.rootPath); err != nil {
+	//		panic(err.Error())
+	//	}
+	//}
 
 	// Nil the server so our deadlock detector goroutine can determine if we completed writes
 	// without timing out
@@ -246,13 +246,13 @@ func (c *client) URL() string {
 }
 
 // Query executes a query against the server and returns the results.
-func (s *client) Query(query string) (results string, err error) {
+func (s *client) Query(query string) (results string, headers string, err error) {
 	return s.QueryWithParams(query, nil)
 }
 
 // MustQuery executes a query against the server and returns the results.
 func (s *client) MustQuery(query string) string {
-	results, err := s.Query(query)
+	results, _, err := s.Query(query)
 	if err != nil {
 		panic(err)
 	}
@@ -260,7 +260,7 @@ func (s *client) MustQuery(query string) string {
 }
 
 // Query executes a query against the server and returns the results.
-func (s *client) QueryWithParams(query string, values url.Values) (results string, err error) {
+func (s *client) QueryWithParams(query string, values url.Values) (results string, headers string, err error) {
 	var v url.Values
 	if values == nil {
 		v = url.Values{}
@@ -273,7 +273,7 @@ func (s *client) QueryWithParams(query string, values url.Values) (results strin
 
 // MustQueryWithParams executes a query against the server and returns the results.
 func (s *client) MustQueryWithParams(query string, values url.Values) string {
-	results, err := s.QueryWithParams(query, values)
+	results, _, err := s.QueryWithParams(query, values)
 	if err != nil {
 		panic(err)
 	}
@@ -301,23 +301,23 @@ func (s *client) HTTPGet(url string) (results string, err error) {
 }
 
 // HTTPPost makes an HTTP POST request to the server and returns the response.
-func (s *client) HTTPPost(url string, content []byte) (results string, err error) {
+func (s *client) HTTPPost(url string, content []byte) (results string, headers string, err error) {
 	buf := bytes.NewBuffer(content)
 	resp, err := http.Post(url, "application/json", buf)
 	if err != nil {
-		return "", err
+		return "", fmt.Sprint(resp.Header), err
 	}
 	body := strings.TrimSpace(string(MustReadAll(resp.Body)))
 	switch resp.StatusCode {
 	case http.StatusBadRequest:
 		if !expectPattern(".*error parsing query*.", body) {
-			return "", fmt.Errorf("unexpected status code: code=%d, body=%s", resp.StatusCode, body)
+			return "", fmt.Sprint(resp.Header), fmt.Errorf("unexpected status code: code=%d, body=%s", resp.StatusCode, body)
 		}
-		return body, nil
+		return body, fmt.Sprint(resp.Header), nil
 	case http.StatusOK, http.StatusNoContent:
-		return body, nil
+		return body, fmt.Sprint(resp.Header), nil
 	default:
-		return "", fmt.Errorf("unexpected status code: code=%d, body=%s", resp.StatusCode, body)
+		return "", fmt.Sprint(resp.Header), fmt.Errorf("unexpected status code: code=%d, body=%s", resp.StatusCode, body)
 	}
 }
 
@@ -466,15 +466,16 @@ type Query struct {
 	skip     bool
 	repeat   int
 	once     bool
+	headers  string
 }
 
 // Execute runs the command and returns an err if it fails
 func (q *Query) Execute(s Server) (err error) {
 	if q.params == nil {
-		q.act, err = s.Query(q.command)
+		q.act, q.headers, err = s.Query(q.command)
 		return
 	}
-	q.act, err = s.QueryWithParams(q.command, q.params)
+	q.act, q.headers, err = s.QueryWithParams(q.command, q.params)
 	return
 }
 
@@ -490,7 +491,7 @@ func (q *Query) Error(err error) string {
 }
 
 func (q *Query) failureMessage() string {
-	return fmt.Sprintf("%s: unexpected results\nquery:  %s\nparams:  %v\nexp:    %s\nactual: %s\n", q.name, q.command, q.params, q.exp, q.act)
+	return fmt.Sprintf("%s: unexpected results\nquery:  %s\nheaders: %s\n params:  %v\nexp:    %s\nactual: %s\n", q.name, q.headers, q.command, q.params, q.exp, q.act)
 }
 
 type Write struct {

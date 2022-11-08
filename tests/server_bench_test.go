@@ -15,7 +15,7 @@ func BenchmarkServer_Query_Count_100K(b *testing.B) { benchmarkServerQueryCount(
 func BenchmarkServer_Query_Count_1M(b *testing.B)   { benchmarkServerQueryCount(b, 1000000) }
 
 func benchmarkServerQueryCount(b *testing.B, pointN int) {
-	if _, err := benchServer.Query(`DROP MEASUREMENT cpu`); err != nil {
+	if _, _, err := benchServer.Query(`DROP MEASUREMENT cpu`); err != nil {
 		b.Fatal(err)
 	}
 
@@ -34,7 +34,7 @@ func benchmarkServerQueryCount(b *testing.B, pointN int) {
 	b.ReportAllocs()
 	var err error
 	for i := 0; i < b.N; i++ {
-		if strResult, err = benchServer.Query(`SELECT count(value) FROM db0.rp0.cpu`); err != nil {
+		if strResult, _, err = benchServer.Query(`SELECT count(value) FROM db0.rp0.cpu`); err != nil {
 			b.Fatal(err)
 		} else if strResult != fmt.Sprintf(`{"results":[{"statement_id":0,"series":[{"name":"cpu","columns":["time","count"],"values":[["1970-01-01T00:00:00Z",%d]]}]}]}`, pointN) {
 			b.Fatalf("unexpected result: %s", strResult)
@@ -69,7 +69,7 @@ func BenchmarkServer_Query_Count_Where_Regex_100K(b *testing.B) {
 }
 
 func benchmarkServerQueryCountWhere(b *testing.B, useRegex bool, pointN int) {
-	if _, err := benchServer.Query(`DROP MEASUREMENT cpu`); err != nil {
+	if _, _, err := benchServer.Query(`DROP MEASUREMENT cpu`); err != nil {
 		b.Fatal(err)
 	}
 
@@ -96,7 +96,7 @@ func benchmarkServerQueryCountWhere(b *testing.B, useRegex bool, pointN int) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		if strResult, err = benchServer.Query(fmt.Sprintf(`SELECT count(value) FROM db0.rp0.cpu WHERE %s`, condition)); err != nil {
+		if strResult, _, err = benchServer.Query(fmt.Sprintf(`SELECT count(value) FROM db0.rp0.cpu WHERE %s`, condition)); err != nil {
 			b.Fatal(err)
 		} else if strResult == `{"results":[{}]}` {
 			b.Fatal("no results")
@@ -110,7 +110,7 @@ func BenchmarkServer_ShowSeries_100K(b *testing.B) { benchmarkServerShowSeries(b
 func BenchmarkServer_ShowSeries_1M(b *testing.B)   { benchmarkServerShowSeries(b, 1000000) }
 
 func benchmarkServerShowSeries(b *testing.B, pointN int) {
-	if _, err := benchServer.Query(`DROP MEASUREMENT cpu`); err != nil {
+	if _, _, err := benchServer.Query(`DROP MEASUREMENT cpu`); err != nil {
 		b.Fatal(err)
 	}
 
@@ -129,7 +129,7 @@ func benchmarkServerShowSeries(b *testing.B, pointN int) {
 	b.ReportAllocs()
 	var err error
 	for i := 0; i < b.N; i++ {
-		if strResult, err = benchServer.QueryWithParams(`SHOW SERIES`, url.Values{"db": {"db0"}}); err != nil {
+		if strResult, _, err = benchServer.QueryWithParams(`SHOW SERIES`, url.Values{"db": {"db0"}}); err != nil {
 			b.Fatal(err)
 		}
 	}

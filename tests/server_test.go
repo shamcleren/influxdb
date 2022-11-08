@@ -652,7 +652,7 @@ func TestServer_Write_PartialWrite(t *testing.T) {
 				assert.NoError(t, err)
 			}
 			assert.Equal(t, "", res)
-			res, err = s.Query(`SELECT * FROM db0.rp0.cpu`)
+			res, _, err = s.Query(`SELECT * FROM db0.rp0.cpu`)
 			assert.NoError(t, err)
 			assert.Equal(t, tt.selectResult, res)
 		})
@@ -677,7 +677,7 @@ func TestServer_Write_LineProtocol_Float(t *testing.T) {
 	}
 
 	// Verify the data was written.
-	if res, err := s.Query(`SELECT * FROM db0.rp0.cpu GROUP BY *`); err != nil {
+	if res, _, err := s.Query(`SELECT * FROM db0.rp0.cpu GROUP BY *`); err != nil {
 		t.Fatal(err)
 	} else if exp := fmt.Sprintf(`{"results":[{"statement_id":0,"series":[{"name":"cpu","tags":{"host":"server01"},"columns":["time","value"],"values":[["%s",1]]}]}]}`, now.Format(time.RFC3339Nano)); exp != res {
 		t.Fatalf("unexpected results\nexp: %s\ngot: %s\n", exp, res)
@@ -702,7 +702,7 @@ func TestServer_Write_LineProtocol_Bool(t *testing.T) {
 	}
 
 	// Verify the data was written.
-	if res, err := s.Query(`SELECT * FROM db0.rp0.cpu GROUP BY *`); err != nil {
+	if res, _, err := s.Query(`SELECT * FROM db0.rp0.cpu GROUP BY *`); err != nil {
 		t.Fatal(err)
 	} else if exp := fmt.Sprintf(`{"results":[{"statement_id":0,"series":[{"name":"cpu","tags":{"host":"server01"},"columns":["time","value"],"values":[["%s",true]]}]}]}`, now.Format(time.RFC3339Nano)); exp != res {
 		t.Fatalf("unexpected results\nexp: %s\ngot: %s\n", exp, res)
@@ -727,7 +727,7 @@ func TestServer_Write_LineProtocol_String(t *testing.T) {
 	}
 
 	// Verify the data was written.
-	if res, err := s.Query(`SELECT * FROM db0.rp0.cpu GROUP BY *`); err != nil {
+	if res, _, err := s.Query(`SELECT * FROM db0.rp0.cpu GROUP BY *`); err != nil {
 		t.Fatal(err)
 	} else if exp := fmt.Sprintf(`{"results":[{"statement_id":0,"series":[{"name":"cpu","tags":{"host":"server01"},"columns":["time","value"],"values":[["%s","disk full"]]}]}]}`, now.Format(time.RFC3339Nano)); exp != res {
 		t.Fatalf("unexpected results\nexp: %s\ngot: %s\n", exp, res)
@@ -752,7 +752,7 @@ func TestServer_Write_LineProtocol_Integer(t *testing.T) {
 	}
 
 	// Verify the data was written.
-	if res, err := s.Query(`SELECT * FROM db0.rp0.cpu GROUP BY *`); err != nil {
+	if res, _, err := s.Query(`SELECT * FROM db0.rp0.cpu GROUP BY *`); err != nil {
 		t.Fatal(err)
 	} else if exp := fmt.Sprintf(`{"results":[{"statement_id":0,"series":[{"name":"cpu","tags":{"host":"server01"},"columns":["time","value"],"values":[["%s",100]]}]}]}`, now.Format(time.RFC3339Nano)); exp != res {
 		t.Fatalf("unexpected results\nexp: %s\ngot: %s\n", exp, res)
@@ -777,7 +777,7 @@ func TestServer_Write_LineProtocol_Unsigned(t *testing.T) {
 	}
 
 	// Verify the data was written.
-	if res, err := s.Query(`SELECT * FROM db0.rp0.cpu GROUP BY *`); err != nil {
+	if res, _, err := s.Query(`SELECT * FROM db0.rp0.cpu GROUP BY *`); err != nil {
 		t.Fatal(err)
 	} else if exp := fmt.Sprintf(`{"results":[{"statement_id":0,"series":[{"name":"cpu","tags":{"host":"server01"},"columns":["time","value"],"values":[["%s",100]]}]}]}`, now.Format(time.RFC3339Nano)); exp != res {
 		t.Fatalf("unexpected results\nexp: %s\ngot: %s\n", exp, res)
@@ -810,7 +810,7 @@ func TestServer_Write_LineProtocol_Partial(t *testing.T) {
 	}
 
 	// Verify the data was written.
-	if res, err := s.Query(`SELECT * FROM db0.rp0.cpu GROUP BY *`); err != nil {
+	if res, _, err := s.Query(`SELECT * FROM db0.rp0.cpu GROUP BY *`); err != nil {
 		t.Fatal(err)
 	} else if exp := fmt.Sprintf(`{"results":[{"statement_id":0,"series":[{"name":"cpu","tags":{"host":"server01"},"columns":["time","value"],"values":[["%s",100]]}]}]}`, now.Format(time.RFC3339Nano)); exp != res {
 		t.Fatalf("unexpected results\nexp: %s\ngot: %s\n", exp, res)
@@ -905,7 +905,7 @@ func TestServer_ShowShardsNonInf(t *testing.T) {
 		`[1,"db0","rp0",1,"2021-05-17T00:00:00Z","2021-05-24T00:00:00Z","2135-06-22T16:00:00Z",""],` +
 		`[2,"db0","rp1",2,"2021-05-17T00:00:00Z","2021-05-24T00:00:00Z","",""]]}]}]}`
 	// Verify the data was written.
-	if res, err := s.Query(`show shards`); err != nil {
+	if res, _, err := s.Query(`show shards`); err != nil {
 		t.Fatal(err)
 	} else if exp != res {
 		t.Fatalf("unexpected results\nexp: %s\ngot: %s\n", exp, res)
@@ -7664,7 +7664,7 @@ func TestServer_Query_ShowIngressStats(t *testing.T) {
 			if _, err := s.Write("db0", "rp0", writes, url.Values{}); err != nil {
 				t.Fatalf("Unexpected write error: %v", err)
 			}
-			results, err := s.Query("show stats")
+			results, _, err := s.Query("show stats")
 			if err != nil {
 				t.Fatalf("stats query error: %v", err)
 			}
@@ -10147,7 +10147,7 @@ func TestGroupByEndToEnd(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, s.WritePoints(t.Name(), "autogen", models.ConsistencyLevelAny, nil, points))
 
-	results, err := s.QueryWithParams(`SELECT SUM(ncount) as scount FROM (SELECT NON_NEGATIVE_DIFFERENCE(total_count) as ncount FROM m0 WHERE time >= '2021-05-10T00:00:00Z' AND time <= '2021-05-15T23:59:59Z' AND tenant_id='tb' GROUP BY env) WHERE time >= '2021-05-10T00:00:00Z' AND time <= '2021-05-15T23:59:59Z' GROUP BY time(1d)`, url.Values{"db": []string{t.Name()}})
+	results, _, err := s.QueryWithParams(`SELECT SUM(ncount) as scount FROM (SELECT NON_NEGATIVE_DIFFERENCE(total_count) as ncount FROM m0 WHERE time >= '2021-05-10T00:00:00Z' AND time <= '2021-05-15T23:59:59Z' AND tenant_id='tb' GROUP BY env) WHERE time >= '2021-05-10T00:00:00Z' AND time <= '2021-05-15T23:59:59Z' GROUP BY time(1d)`, url.Values{"db": []string{t.Name()}})
 	require.NoError(t, err)
 	// This tests a regression in 1.9.0 where this returned multiple rows for each day due to an incorrect attempted optimization of the merge sort iteration.
 	assert.Equal(t, `{"results":[{"statement_id":0,"series":[{"name":"m0","columns":["time","scount"],"values":[["2021-05-10T00:00:00Z",10],["2021-05-11T00:00:00Z",5],["2021-05-12T00:00:00Z",3],["2021-05-13T00:00:00Z",7],["2021-05-14T00:00:00Z",4],["2021-05-15T00:00:00Z",null]]}]}]}`, results)
