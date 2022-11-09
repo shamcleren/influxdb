@@ -23,7 +23,7 @@ import (
 	httppprof "net/http/pprof"
 
 	"github.com/bmizerany/pat"
-	"github.com/dgrijalva/jwt-go/v4"
+	jwt "github.com/dgrijalva/jwt-go/v4"
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/snappy"
 	"github.com/influxdata/flux"
@@ -215,6 +215,10 @@ func NewHandler(c Config) *Handler {
 		Route{
 			"prometheus-read", // Prometheus remote read
 			"POST", "/api/v1/prom/read", true, true, h.servePromRead,
+		},
+		Route{
+			"raw data read", // raw read
+			"GET", "/api/v1/raw/read", true, true, h.serveRawRead,
 		},
 		Route{ // Ping
 			"ping",
@@ -815,7 +819,6 @@ func (h *Handler) async(q *influxql.Query, results <-chan *query.Result) {
 // in the database URL query value.  It is encoded using a forward slash like
 // "database/retentionpolicy" and we should be able to simply split that string
 // on the forward slash.
-//
 func bucket2dbrp(bucket string) (string, string, error) {
 	// test for a slash in our bucket name.
 	switch idx := strings.IndexByte(bucket, '/'); idx {

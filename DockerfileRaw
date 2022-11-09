@@ -1,0 +1,16 @@
+FROM debian:stable
+
+RUN apt-get update && apt-get install -y procps && rm -rf /var/lib/apt/lists/*
+
+COPY ./bin/* /usr/bin/
+COPY ./etc/config.sample.toml /etc/influxdb/influxdb.conf
+
+EXPOSE 8086
+EXPOSE 6060
+VOLUME /var/lib/influxdb
+
+COPY docker/entrypoint.sh /entrypoint.sh
+COPY docker/init-influxdb.sh /init-influxdb.sh
+
+ENTRYPOINT ["/entrypoint.sh"]
+CMD ["influxd"]
